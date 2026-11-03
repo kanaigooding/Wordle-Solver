@@ -1,0 +1,86 @@
+import pytest
+from fastapi.testclient import TestClient
+
+from solver import feedback
+from webapp.server import app
+
+# Not used as a context manager, so the startup warm-up thread doesn't run.
+client = TestClient(app)
+
+
+def turn(guess, answer):
+    return {'guess': guess, 'feedback': feedback(guess, answer)}
+
+
+def test_index_serves_the_ui():
+    response = client.get('/')
+    assert response.status_code == 200
+    assert 'Wordle Lab' in response.text
+
+
+def test_words_lists_guesses_and_answers():
+    data = client.get('/api/words').json()
+    assert len(data['answers']) == 2315
+    assert set(data['answers']) <= set(data['guesses'])
+
+
+def test_analyze_filters_and_ranks():
+    data = client.post('/api/analyze', json={'history': [turn('soare', 'proud')]}).json()
+    assert data['remaining'] == 59
+    assert 'proud' in {c['word'] for c in data['candidates']}
+    assert data['one_step'][0]['word'] == 'cutin'
+    assert data['one_step'][0]['worst_left'] >= data['one_step'][0]['expected_left'] > 0
+    assert data['total'] == 2315
+    assert [t['after'] for t in data['turns']] == [59]
+
+
+def test_analyze_reports_no_matches():
+    data = client.post('/api/analyze', json={'history': [{'guess': 'soare', 'feedback': 'GGGGB'}]}).json()
+    assert data['remaining'] == 0
+    assert data['one_step'] == []
+
+
+def test_two_step_returns_shortlist():
+    data = client.post('/api/two-step', json={'history': [turn('soare', 'proud')]}).json()
+    assert data['two_step'][0]['word'] == 'futon'
+    assert all(s['two_step'] is not None for s in data['two_step'])
+
+
+@pytest.mark.parametrize('body', [
+    {'history': [{'guess': 'zzzzz', 'feedback': 'BBBBB'}]},
+    {'history': [{'guess': 'soare', 'feedback': 'BBXBB'}]},
+    {'mode': 'nope'},
+])
+def test_bad_requests_are_rejected(body):
+    assert client.post('/api/analyze', json=body).status_code in (400, 422)
+
+
+def test_ui_files_are_revalidated():
+    assert client.get('/').headers['cache-control'] == 'no-cache'
+    assert client.get('/static/app.js').headers['cache-control'] == 'no-cache'
+
+
+def test_answers_outside_the_original_list_are_found_in_all_mode():
+    # SCOOT was a NYT answer but isn't on the original 2,315-word list.
+    history = [turn('soare', 'scoot'), turn('cloot', 'scoot')]
+    original = client.post('/api/analyze', json={'history': history}).json()
+    everything = client.post('/api/analyze', json={'mode': 'all', 'history': history}).json()
+    assert original['remaining'] == 0
+    assert [c['word'] for c in everything['candidates']] == ['scoot']
+
+
+def test_opening_comes_from_the_book_with_the_exhaustive_pick():
+    data = client.post('/api/analyze', json={}).json()
+    assert data['source'] == 'book'
+    assert data['exhaustive']['word'] == 'salet'
+    assert data['one_step'][0]['word'] == 'soare'
+    two = client.post('/api/two-step', json={}).json()
+    assert two['source'] == 'book'
+    assert two['two_step'][0]['word'] == 'slane'
+
+
+def test_later_positions_are_searched_live():
+    history = [turn('soare', 'proud'), turn('cutin', 'proud')]
+    data = client.post('/api/analyze', json={'history': history}).json()
+    assert data['source'] == 'live'
+    assert data['exhaustive'] is None
