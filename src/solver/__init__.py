@@ -1,5 +1,6 @@
 # src/solver/__init__.py
 
-from .wordle_solver import WordleSolver
+from .patterns import decode, encode, feedback
+from .solver import MODES, Suggestion, WordleSolver
 
-__all__ = ['WordleSolver']
+__all__ = ['WordleSolver', 'Suggestion', 'MODES', 'feedback', 'encode', 'decode']

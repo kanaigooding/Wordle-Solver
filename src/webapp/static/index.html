@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wordle Lab</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo" aria-hidden="true">W</span>Wordle Lab</div>
+    <div class="controls">
+      <div class="seg" id="game-mode" aria-label="Game mode">
+        <button data-value="assist" class="active" title="Enter the colours from a game you're playing elsewhere">Assist</button>
+        <button data-value="play" title="Play against a hidden answer; colours are filled in for you">Play</button>
+      </div>
+      <div class="seg" id="answer-mode" aria-label="Possible answers">
+        <button data-value="official" class="active" title="The 2,315 original Wordle answers, equally likely">Official answers</button>
+        <button data-value="all" title="Any of the 12,953 valid words, weighted by how common it is">All words</button>
+      </div>
+      <button id="undo" class="ghost" title="Undo last guess (Ctrl+Z)">Undo</button>
+      <button id="new-game" class="ghost">New game</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="play-area">
+      <div id="board" class="board"></div>
+      <p id="hint" class="hint"></p>
+      <div id="keyboard" class="keyboard"></div>
+
+      <section class="game-stats" aria-label="How the game went">
+        <div class="section-head"><h2>How the game went</h2></div>
+        <p id="stats-empty" class="muted">Make a guess to see how the answer space shrinks.</p>
+        <div id="charts" hidden>
+          <figure class="chart-card">
+            <figcaption>
+              <b>Answers remaining</b>
+              <span class="muted">Log scale: each equal step down is the same number of halvings.</span>
+            </figcaption>
+            <div class="chart" id="chart-remaining"></div>
+          </figure>
+          <figure class="chart-card">
+            <figcaption>
+              <b>Bits per guess</b>
+              <span class="muted">What your guess was expected to give, the best any guess could expect, and what the colours actually gave.</span>
+            </figcaption>
+            <div class="chart-legend" id="bits-legend"></div>
+            <div class="chart" id="chart-bits"></div>
+          </figure>
+          <table class="turn-log">
+            <thead>
+              <tr>
+                <th>#</th><th>Guess</th>
+                <th title="Bits your guess was expected to give">Expected</th>
+                <th title="Bits the best one-step guess was expected to give">Best</th>
+                <th title="Bits the colours actually gave">Actual</th>
+                <th title="Possible answers left after this guess">Left</th>
+                <th title="Share of the original answer space left">Space</th>
+              </tr>
+            </thead>
+            <tbody id="turn-log"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <aside class="panel">
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-value" id="remaining">–</span>
+          <span class="stat-label">possible answers</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="space-left">–</span>
+          <span class="stat-label">of answer space</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="uncertainty">–</span>
+          <span class="stat-label">bits of uncertainty</span>
+        </div>
+      </div>
+
+      <div id="notice" class="notice" hidden></div>
+
+      <div class="picks">
+        <button class="pick" id="pick-one" data-strategy="one">
+          <span class="pick-label">One-step best</span>
+          <span class="pick-word">–</span>
+          <span class="pick-score"></span>
+        </button>
+        <button class="pick" id="pick-two" data-strategy="two">
+          <span class="pick-label">Two-step best</span>
+          <span class="pick-word">–</span>
+          <span class="pick-score"></span>
+        </button>
+      </div>
+
+      <div class="section-head">
+        <h2>Suggestions</h2>
+        <div class="seg small" id="rank-by" aria-label="Rank suggestions by">
+          <button data-value="one" class="active">1-step</button>
+          <button data-value="two">2-step</button>
+        </div>
+      </div>
+      <table class="suggestions">
+        <thead>
+          <tr>
+            <th>Guess</th>
+            <th title="Expected bits from this guess">1-step</th>
+            <th title="Expected bits from this guess plus the best follow-up">2-step</th>
+            <th title="Expected number of possible answers left after this guess">Exp. left</th>
+            <th title="Possible answers left in the worst case">Worst</th>
+            <th title="Chance this guess is the answer">Win</th>
+          </tr>
+        </thead>
+        <tbody id="suggestions"></tbody>
+      </table>
+      <p class="legend">
+        <b>1-step</b> is the expected information (bits) from this guess's colours.
+        <b>2-step</b> adds the expected bits from the best follow-up guess.
+        <b>Exp. left</b> and <b>Worst</b> are the possible answers left afterwards, on average and at worst.
+        <b>Win</b> is the chance it's the answer.
+      </p>
+
+      <div class="section-head">
+        <h2>Possible answers</h2>
+        <span id="candidate-count" class="muted"></span>
+      </div>
+      <div id="candidates" class="chips"></div>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

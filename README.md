@@ -1,92 +1,82 @@
-# Wordle & Quordle Solver
+# Wordle Lab
 
-This repository contains a Wordle and Quordle solver implemented in Python. It includes a graphical user interface (GUI) for both games, allowing users to interactively solve Wordle and Quordle puzzles.
+An experiment in information-theoretic Wordle solving. Wordle Lab ranks every possible guess two ways and shows them side by side:
 
-## Table of Contents
-- Introduction
-- Features
-- Installation
-- Usage
-- Directory Structure
-- Contributing
-- License
+- **One-step entropy:** the expected information (in bits) from the colours a guess produces.
+- **Two-step entropy:** that, plus the expected information from the best follow-up guess, averaged over every colour pattern the first guess could produce.
 
-## Introduction
+Both add the chance the guess is the answer itself, so that late in a game a guess that could win outright beats an equally informative one that can't.
 
-The Wordle and Quordle solvers use frequency analysis of words and letters to optimize guesses and provide feedback to help users find the correct words. The GUI is built using `tkinter`, providing an easy-to-use interface for solving the puzzles interactively.
-
-## Features
-
-- Wordle Solver GUI: A GUI to solve Wordle puzzles.
-- Quordle Solver GUI: A GUI to solve Quordle puzzles.
-- Frequency Analysis: Uses word and letter frequency maps to optimize guesses.
-- Interactive Feedback: Provides feedback on guesses to help narrow down possible solutions.
+It comes with a local web UI for using the solver on a real game or watching it play, and a benchmark that plays every answer with each strategy.
 
 ## Installation
 
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/your-username/wordle-quordle-solver.git
-    cd wordle-quordle-solver
-    ```
+```bash
+git clone https://github.com/kanaigooding/Wordle-Solver.git
+cd Wordle-Solver
+pip install -r requirements.txt
+```
 
-2. The solver and GUIs only need the standard library (`tkinter` ships with Python). To run the tests, install pytest:
-    ```bash
-    pip install -r requirements.txt
-    ```
+Optionally install in editable mode to get the `wordle-lab` and `wordle-benchmark` commands:
 
-3. Optionally, install the package in editable mode to get the `wordle_solver_gui` and `quordle_solver_gui` commands:
-    ```bash
-    pip install -e .
-    ```
+```bash
+pip install -e .
+```
 
-## Running the tests
+## Usage
+
+### Web UI
+
+```bash
+python src/webapp
+```
+
+This opens `http://127.0.0.1:8000`. The first launch builds and caches the pattern matrix (about 7 seconds) and the two-step opening ranking (about 90 seconds, in the background).
+
+- **Assist mode:** type the guess you made in the real game, click the tiles (or press `1`–`5`) to match its colours, then press `Enter`.
+- **Play mode:** the app picks a hidden answer and colours your guesses for you.
+- `Tab` fills in the top suggestion for the selected strategy; clicking any suggestion or possible answer does the same.
+- **Official answers** assumes the 2,315 original Wordle answers. **All words** treats any of the 12,953 valid words as possible, weighted by how common it is.
+
+### Benchmark
+
+```bash
+cd src
+python -m solver.benchmark                    # both strategies, all 2,315 answers
+python -m solver.benchmark --strategy two-step --sample 300
+```
+
+### Tests
 
 ```bash
 python -m pytest
 ```
 
-## Usage
+## How it works
 
-### Wordle Solver
-
-To run the Wordle Solver GUI, use the following command:
-```bash
-python src/gui/wordle_gui.py
-```
-
-### Quordle Solver
-
-To run the Quordle Solver GUI, use the following command:
-```bash
-python src/gui/quordle_gui.py
-```
+Every (guess, answer) pair's colour pattern is precomputed into a 12,953 × 2,315 matrix of pattern numbers (0–242), cached in `.cache/`. Filtering candidates and computing entropy for every guess then become numpy array operations; a one-step ranking takes about 20 ms after the first guess. Two-step lookahead runs on the 50 best one-step guesses and is memoised by candidate set.
 
 ## Directory Structure
 
 ```
-wordle-quordle-solver/
+Wordle-Solver/
 ├── frequencyMaps/
-│   ├── validwords.txt
-│   ├── word_freq_map.json
-│   ├── letter_freq_map.json
-│   ├── regularized_word_freq_map.json
-│   ├── regularized_letter_freq_map.json
+│   ├── answers.txt                     # the 2,315 original Wordle answers
+│   ├── validwords.txt                  # all 12,953 accepted guesses
+│   ├── regularized_word_freq_map.json  # word frequencies, for "All words" mode
+│   └── ...
 ├── src/
-│   ├── gui/
-│   │   ├── quordle_gui.py
-│   │   ├── wordle_gui.py
-│   │   ├── __init__.py
 │   ├── solver/
-│   │   ├── wordle_solver.py
-│   │   ├── __init__.py
+│   │   ├── patterns.py                 # feedback rules and the pattern matrix
+│   │   ├── solver.py                   # one-step and two-step ranking
+│   │   └── benchmark.py                # plays every answer with each strategy
+│   └── webapp/
+│       ├── server.py                   # FastAPI backend
+│       └── static/                     # HTML, CSS and JS front end
 ├── tests/
-│   ├── test_wordle_solver.py
 ├── pytest.ini
-├── README.md
 ├── requirements.txt
-├── .gitignore
-├── setup.py
+└── setup.py
 ```
 
 ## Contributing
