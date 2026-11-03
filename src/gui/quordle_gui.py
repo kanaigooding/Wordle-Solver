@@ -1,5 +1,12 @@
+import sys
 import tkinter as tk
-from wordle_solver import WordleSolver
+from pathlib import Path
+
+if not __package__:
+    # Running as a script (python src/gui/...): make the solver package importable.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from solver import WordleSolver
 
 class QuordleGUI(tk.Tk):
     def __init__(self):
@@ -8,8 +15,7 @@ class QuordleGUI(tk.Tk):
         self.title('Quordle Solver')
         self.geometry('900x700')
 
-        self.solvers = [WordleSolver('frequencyMaps/validwords.txt', 'frequencyMaps/word_freq_map.json',
-                                     'frequencyMaps/letter_freq_map.json') for _ in range(4)]
+        self.solvers = [WordleSolver.from_default_files() for _ in range(4)]
 
         self.guesses = [[] for _ in range(4)]
         self.feedback_colors = {'G': 'green', 'Y': 'yellow', 'B': 'dark grey'}
@@ -103,6 +109,10 @@ class QuordleGUI(tk.Tk):
             event.widget['text'] = 'B'
             event.widget['bg'] = self.feedback_colors['B']
 
-if __name__ == "__main__":
+def main():
     app = QuordleGUI()
     app.mainloop()
+
+
+if __name__ == "__main__":
+    main()

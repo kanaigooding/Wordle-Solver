@@ -1,5 +1,12 @@
+import sys
 import tkinter as tk
-from wordle_solver import WordleSolver
+from pathlib import Path
+
+if not __package__:
+    # Running as a script (python src/gui/...): make the solver package importable.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from solver import WordleSolver
 
 class WordleSolverGUI(tk.Tk):
     def __init__(self, solver):
@@ -101,12 +108,10 @@ class WordleSolverGUI(tk.Tk):
         event.widget['text'] = new_feedback
         event.widget['bg'] = self.feedback_colors[new_feedback]
 
-if __name__ == "__main__":
-    # Instantiate the solver
-    solver = WordleSolver('../frequencyMaps/validwords.txt',
-                          '../frequencyMaps/regularized_word_freq_map.json',
-                          '../frequencyMaps/regularized_letter_freq_map.json')
-
-    # Create GUI and start the main loop
-    solver_gui = WordleSolverGUI(solver)
+def main():
+    solver_gui = WordleSolverGUI(WordleSolver.from_default_files())
     solver_gui.mainloop()
+
+
+if __name__ == "__main__":
+    main()

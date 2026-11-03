@@ -30,10 +30,21 @@ The Wordle and Quordle solvers use frequency analysis of words and letters to op
     cd wordle-quordle-solver
     ```
 
-2. Install the required dependencies:
+2. The solver and GUIs only need the standard library (`tkinter` ships with Python). To run the tests, install pytest:
     ```bash
     pip install -r requirements.txt
     ```
+
+3. Optionally, install the package in editable mode to get the `wordle_solver_gui` and `quordle_solver_gui` commands:
+    ```bash
+    pip install -e .
+    ```
+
+## Running the tests
+
+```bash
+python -m pytest
+```
 
 ## Usage
 
@@ -65,12 +76,13 @@ wordle-quordle-solver/
 │   ├── gui/
 │   │   ├── quordle_gui.py
 │   │   ├── wordle_gui.py
+│   │   ├── __init__.py
 │   ├── solver/
 │   │   ├── wordle_solver.py
 │   │   ├── __init__.py
 ├── tests/
-│   ├── wordle_solver_test.py
-│   ├── quordle_solver_test.py
+│   ├── test_wordle_solver.py
+├── pytest.ini
 ├── README.md
 ├── requirements.txt
 ├── .gitignore

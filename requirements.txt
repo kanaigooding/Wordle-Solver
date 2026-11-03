@@ -1,1 +1,1 @@
-tkinter
+pytest>=7
