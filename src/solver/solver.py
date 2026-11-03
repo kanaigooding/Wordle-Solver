@@ -9,6 +9,7 @@ Two strategies are compared side by side:
 Both scores add P(g), the chance g is the answer, so that late in the game a guess that
 could win outright beats an equally informative guess that cannot.
 """
+import hashlib
 import json
 import math
 from dataclasses import dataclass, asdict
@@ -76,6 +77,13 @@ class WordleSolver:
         self.matrix = load_pattern_matrix(self.guesses, self.answers, self.cache_dir)
         self._best_entropy_memo = {}
         self._opening_one_step = None
+
+    @property
+    def fingerprint(self):
+        """Identifies the word lists and weights, so precomputed results can be checked against them."""
+        digest = hashlib.sha1('\n'.join(self.guesses + ['|'] + self.answers).encode())
+        digest.update(np.round(self.weights, 12).tobytes())
+        return digest.hexdigest()[:16]
 
     @classmethod
     def load(cls, mode='official'):

@@ -358,9 +358,26 @@ kbd {
 
 .picks {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 10px;
 }
+
+.pick[hidden] { display: none; }
+
+.source-pill {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  vertical-align: 1px;
+}
+
+.source-pill:empty { display: none; }
+.source-pill.book { border-color: var(--accent); color: var(--accent); }
 
 .pick {
   display: flex;

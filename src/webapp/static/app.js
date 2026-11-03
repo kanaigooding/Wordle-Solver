@@ -363,6 +363,24 @@ function renderPanel() {
   $('pick-one').classList.toggle('active', state.rankBy === 'one');
   $('pick-two').classList.toggle('active', state.rankBy === 'two');
 
+  // The exhaustive-search optimum is only known for the opening move.
+  const exhaustive = a?.exhaustive;
+  const exhaustiveCard = $('pick-exhaustive');
+  exhaustiveCard.hidden = !exhaustive;
+  if (exhaustive) {
+    exhaustiveCard.querySelector('.pick-word').textContent = exhaustive.word;
+    exhaustiveCard.querySelector('.pick-score').textContent = `${exhaustive.average.toFixed(2)} avg guesses, proven`;
+    exhaustiveCard.title = `Proven optimal opener by exhaustive search: ${exhaustive.source}`;
+    exhaustiveCard.dataset.word = exhaustive.word;
+  }
+
+  const source = $('source');
+  source.textContent = !a || a.remaining === 0 ? '' : a.source === 'book' ? 'Opening book' : 'Live search';
+  source.classList.toggle('book', a?.source === 'book');
+  source.title = a?.source === 'book'
+    ? 'Precomputed for this early position, so it loads instantly'
+    : 'Computed now for this position';
+
   renderSuggestions();
   renderCandidates();
   renderGameStats();
@@ -756,7 +774,11 @@ renderThemeButton();
 
 $('undo').addEventListener('click', (e) => { e.currentTarget.blur(); undo(); });
 $('new-game').addEventListener('click', (e) => { e.currentTarget.blur(); newGame(); });
-document.querySelectorAll('.pick').forEach((pick) => {
+$('pick-exhaustive').addEventListener('click', (e) => {
+  e.currentTarget.blur();
+  if (e.currentTarget.dataset.word) fillWord(e.currentTarget.dataset.word);
+});
+document.querySelectorAll('.pick[data-strategy]').forEach((pick) => {
   pick.addEventListener('click', () => {
     state.rankBy = pick.dataset.strategy;
     setSegment('rank-by', state.rankBy);

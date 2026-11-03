@@ -67,3 +67,20 @@ def test_answers_outside_the_original_list_are_found_in_all_mode():
     everything = client.post('/api/analyze', json={'mode': 'all', 'history': history}).json()
     assert original['remaining'] == 0
     assert [c['word'] for c in everything['candidates']] == ['scoot']
+
+
+def test_opening_comes_from_the_book_with_the_exhaustive_pick():
+    data = client.post('/api/analyze', json={}).json()
+    assert data['source'] == 'book'
+    assert data['exhaustive']['word'] == 'salet'
+    assert data['one_step'][0]['word'] == 'soare'
+    two = client.post('/api/two-step', json={}).json()
+    assert two['source'] == 'book'
+    assert two['two_step'][0]['word'] == 'slane'
+
+
+def test_later_positions_are_searched_live():
+    history = [turn('soare', 'proud'), turn('cutin', 'proud')]
+    data = client.post('/api/analyze', json={'history': history}).json()
+    assert data['source'] == 'live'
+    assert data['exhaustive'] is None
