@@ -314,6 +314,20 @@ async function refresh() {
   try {
     const analysis = await post('/api/analyze', query);
     if (id !== state.requestId) return;
+
+    // The NYT has used answers outside the original list (e.g. SCOOT). If nothing on it
+    // fits, but some valid word does, the answer is one of those: switch to All words.
+    if (analysis.remaining === 0 && state.answerMode === 'official' && query.history.length) {
+      const fallback = await post('/api/analyze', { ...query, mode: 'all' });
+      if (id !== state.requestId) return;
+      if (fallback.remaining > 0) {
+        state.answerMode = 'all';
+        setSegment('answer-mode', 'all');
+        toast('Not on the original answer list, so switched to All words', 4000);
+        return refresh();
+      }
+    }
+
     state.analysis = analysis;
     if (analysis.remaining === 0) state.twoStepLoading = false;
     renderPanel();
@@ -714,6 +728,32 @@ document.addEventListener('keydown', (e) => {
 bindSegment('game-mode', (value) => { state.gameMode = value; newGame(); });
 bindSegment('answer-mode', (value) => { state.answerMode = value; refresh(); });
 bindSegment('rank-by', (value) => { state.rankBy = value; renderPanel(); });
+// The theme button shows the icon of the theme it switches to.
+const lightQuery = matchMedia('(prefers-color-scheme: light)');
+
+function currentTheme() {
+  return document.documentElement.dataset.theme || (lightQuery.matches ? 'light' : 'dark');
+}
+
+function renderThemeButton() {
+  const next = currentTheme() === 'dark' ? 'light' : 'dark';
+  const button = $('theme');
+  button.querySelector('.icon-sun').style.display = next === 'light' ? '' : 'none';
+  button.querySelector('.icon-moon').style.display = next === 'dark' ? '' : 'none';
+  button.title = `Switch to ${next} mode`;
+  button.setAttribute('aria-label', button.title);
+}
+
+$('theme').addEventListener('click', (e) => {
+  const next = currentTheme() === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('wordle-lab-theme', next); } catch {}
+  e.currentTarget.blur();
+  renderThemeButton();
+});
+lightQuery.addEventListener('change', renderThemeButton);
+renderThemeButton();
+
 $('undo').addEventListener('click', (e) => { e.currentTarget.blur(); undo(); });
 $('new-game').addEventListener('click', (e) => { e.currentTarget.blur(); newGame(); });
 document.querySelectorAll('.pick').forEach((pick) => {

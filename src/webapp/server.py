@@ -40,6 +40,16 @@ app = FastAPI(title='Wordle Lab', lifespan=lifespan)
 app.mount('/static', StaticFiles(directory=STATIC_DIR), name='static')
 
 
+@app.middleware('http')
+async def revalidate_ui_files(request, call_next):
+    """Makes browsers check for a newer page and assets on every load, instead of
+    reusing a cached copy from an older version of the UI."""
+    response = await call_next(request)
+    if request.url.path == '/' or request.url.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+
 def get_solver(mode):
     if mode not in MODES:
         raise HTTPException(400, f"Unknown mode {mode!r}")

@@ -53,3 +53,17 @@ def test_two_step_returns_shortlist():
 ])
 def test_bad_requests_are_rejected(body):
     assert client.post('/api/analyze', json=body).status_code in (400, 422)
+
+
+def test_ui_files_are_revalidated():
+    assert client.get('/').headers['cache-control'] == 'no-cache'
+    assert client.get('/static/app.js').headers['cache-control'] == 'no-cache'
+
+
+def test_answers_outside_the_original_list_are_found_in_all_mode():
+    # SCOOT was a NYT answer but isn't on the original 2,315-word list.
+    history = [turn('soare', 'scoot'), turn('cloot', 'scoot')]
+    original = client.post('/api/analyze', json={'history': history}).json()
+    everything = client.post('/api/analyze', json={'mode': 'all', 'history': history}).json()
+    assert original['remaining'] == 0
+    assert [c['word'] for c in everything['candidates']] == ['scoot']

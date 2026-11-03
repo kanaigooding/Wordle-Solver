@@ -20,8 +20,10 @@
   color-scheme: dark;
 }
 
+/* Light theme: follows the OS unless the theme button forced dark (data-theme="dark"),
+   and always applies when it forced light. The two blocks hold the same values. */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     --bg: #f4f5f8;
     --surface: #ffffff;
     --surface-2: #eef0f5;
@@ -42,7 +44,37 @@
   }
 }
 
+:root[data-theme="light"] {
+    --bg: #f4f5f8;
+    --surface: #ffffff;
+    --surface-2: #eef0f5;
+    --border: #d9dce5;
+    --text: #1d2130;
+    --muted: #6a7084;
+    --accent: #4b5bdc;
+    --hit: #3a9158;
+    --near: #c4951f;
+    --miss: #7b8191;
+    --tile-empty: #ffffff;
+    --danger: #c9454b;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --grid: #e6e8ee;
+    color-scheme: light;
+}
+
 * { box-sizing: border-box; }
+
+.icon-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.icon-button svg { width: 18px; height: 18px; }
 
 body {
   margin: 0;
